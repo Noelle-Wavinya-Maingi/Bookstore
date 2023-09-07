@@ -1,7 +1,7 @@
 from database.db import Base, engine, Session
 import click
-from models import User, Book, BorrowedBook, Fines
-import datetime
+from models import User, Book, BorrowedBook, Fines, Sales
+from datetime import datetime
 
 
 # Define ANSI codes for formatting
@@ -290,6 +290,62 @@ def list_books():
                 + TextStyle.RESET
             )
 
+#Define the 'buy-book' command
+@cli.command()
+@click.option("--book_title", prompt = "Enter the book title", help = "Enter the book title")
+@click.option("--quantity", prompt = "Enter the number of books you want to purchase", help = "Enter the number of books you want to purchase")
+def buy_book(book_title, quantity):
+    """Buy a book from the system"""
+
+    db = Session()
+
+    book = db.query(Book).filter(Book.title == book_title).first()
+
+    if book is None:
+        db.close()
+        click.echo(f"{TextStyle.RED} {book_title} not found." + TextStyle.RESET)
+        return
+    
+    #Check if there are enough books in the inventory to sell
+    try:
+        quantity = int(quantity)
+    except ValueError:
+        db.close()
+        click.echo(f"{TextStyle.RED} Invalid Quantity. Please enter a valid number" + TextStyle.RESET)
+        return
+    
+    if book.inventory < quantity:
+        db.close()
+        click.echo(f"{TextStyle.RED} Sorry, there are only {book.inventory} {book_title}books available." + TextStyle.RESET)
+        return
+    
+    #Calculate the total amount for the sale
+    total_amount = float(quantity) * book.price
+
+    #Confirm the purchase with the user
+    click.echo(f"{TextStyle.CYAN} You are about to purchase {quantity} {book_title} books for a total of Ksh.{total_amount}." + TextStyle.RESET)
+    confirmation = click.prompt("Are you sure you want to proceed? (yes/no)")
+
+    if confirmation.lower() != "yes":
+        db.close()
+        click.echo(f"{TextStyle.YELLOW} Purchase Cancelled." + TextStyle.RESET)
+        return
+
+    # Get the current date and time
+    purchase_time = datetime.now()
+
+    # Update the book's sales records with the purchase date and time
+    sale = Sales(book_id=book.id, quantity=quantity, total_amount=total_amount, purchase_time=purchase_time)
+
+    #Update the book's inventory and total sales amount
+    book.inventory -= quantity
+    book.total_sales += total_amount
+
+    db.add(sale)
+    db.commit()
+    db.close()
+
+    click.echo(f"{TextStyle.GREEN} {quantity} '{book_title}' books purchased successfully for a total of Ksh.{total_amount}." + TextStyle.RESET)
 
 # Helper function to execute chosen options
 def execute_option(option):
@@ -310,6 +366,8 @@ def execute_option(option):
         return_book()
     elif option == "5":
         list_books()
+    elif option == "6":
+        buy_book()
     elif option == "7":
         click.echo(
             f"{TextStyle.YELLOW} Thank you for choosing this bookstore!"
