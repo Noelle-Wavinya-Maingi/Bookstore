@@ -41,14 +41,15 @@ def menu():
     click.echo("6. List all books")
     click.echo("7. List all users")
     click.echo("8. List of Borrowed Books")
-    click.echo(f"{TextStyle.RED}9. Quit" + TextStyle.RESET)
+    click.echo("9. Search")
+    click.echo(f"{TextStyle.RED}10. Quit" + TextStyle.RESET)
 
     print_separator()
 
     option = click.prompt("Enter an option number")
     while True:
         execute_option(option)
-        if option == "9":
+        if option == "10":
             break
 
 
@@ -219,7 +220,7 @@ def return_book(book_title):
 
         # Get the return date of the borrowed book and the current date
         return_date = borrowed_book.return_date
-        current_date = datetime.now()
+        current_date = datetime.datetime.now()
 
         # Check if the book is returned late (current date is greater than return date)
         if current_date > return_date:
@@ -458,9 +459,55 @@ def list_borrowed_books():
         db.close()
 
 
+# Add search for users or books
+@cli.command()
+@click.option("--query", prompt="Enter a search term", help="Enter a search term")
+def search(query):
+    """Search for users or books"""
+
+    db = Session()
+
+    # Query the User table to search for matching usernames
+    matching_users = db.query(User).filter(User.username.ilike(f"%{query}%")).all()
+
+    # Query the Book table to search for matching book titles or authors
+    matching_books = (
+        db.query(Book)
+        .filter(Book.title.ilike(f"%{query}%") | Book.author.ilike(f"%{query}%"))
+        .all()
+    )
+
+    db.close()
+
+    # Check if there are no matching users or books, if not display a message indicating that no results were found
+    if not matching_users and not matching_books:
+        click.echo(
+            f"{TextStyle.YELLOW}No matching users or books found." + TextStyle.RESET
+        )
+        return
+
+    # If there are matching users, display a header and list the matching users
+    if matching_users:
+        click.echo(f"{TextStyle.CYAN}Matching Users")
+        for user in matching_users:
+            click.echo(
+                f"{TextStyle.BOLD} {TextStyle.CYAN}- Username: {user.username}"
+                + TextStyle.RESET
+            )
+
+    # If there are matching books, display a header and list the matching books
+    if matching_books:
+        click.echo(f"{TextStyle.CYAN}Matching Books")
+        for book in matching_books:
+            click.echo(
+                f"{TextStyle.BOLD} {TextStyle.CYAN}- Title: {book.title} | Author: {book.author}"
+                + TextStyle.RESET
+            )
+
+
 # Helper function to execute chosen options
 def execute_option(option):
-    while option not in ["1", "2", "3", "4", "5", "6", "7", "8", "9"]:
+    while option not in ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]:
         click.echo(
             f"{TextStyle.RED}Invalid option. Please choose a valid option."
             + TextStyle.RESET
@@ -484,6 +531,8 @@ def execute_option(option):
     elif option == "8":
         list_borrowed_books()
     elif option == "9":
+        search()
+    elif option == "10":
         click.echo(
             f"{TextStyle.YELLOW} Thank you for choosing this bookstore!"
             + TextStyle.RESET
