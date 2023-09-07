@@ -1,6 +1,15 @@
 from database.db import Base, engine
 import click
 
+#Define ANSI codes for formatting
+class TextStyle:
+    BOLD = "\x1b[1m"
+    RESET = "\x1b[0m"
+    RED = "\x1b[31m"
+    GREEN = "\x1b[32m"
+    YELLOW = "\x1b[33m"
+    CYAN = "\x1b[36m"
+
 #Define a CLI group
 @click.group()
 def cli():
@@ -8,7 +17,7 @@ def cli():
 
 #Helper function to print a separator
 def print_separator():
-    print("\n" + "*" * 70 + "\n")
+    print(TextStyle.BOLD + "*" * 70 + TextStyle.RESET)
 
 #Define the main menu command
 @cli.command()
@@ -17,14 +26,14 @@ def menu():
 
     print_separator()
 
-    click.echo("Choose an option:")
-    click.echo("1. Add a user")
+    click.echo(TextStyle.CYAN + "Choose an option:")
+    click.echo(f"{TextStyle.BOLD}1. Add a user")
     click.echo("2. Add a book")
     click.echo("3. Borrow a book")
     click.echo("4. Return a book")
     click.echo("5. List of books")
     click.echo("6. Buy a book")
-    click.echo("7. Quit")
+    click.echo(f"{TextStyle.RED}7. Quit" + TextStyle.RESET)
 
     print_separator()
 
