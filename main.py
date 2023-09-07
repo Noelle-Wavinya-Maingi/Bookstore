@@ -1,7 +1,7 @@
 from database.db import Base, engine, Session
 import click
 from models import User, Book, BorrowedBook, Fines, Sales
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 # Define ANSI codes for formatting
@@ -43,14 +43,15 @@ def menu():
     click.echo("8. List of Borrowed Books")
     click.echo("9. Search")
     click.echo("10. Update records")
-    click.echo(f"{TextStyle.RED}11. Quit" + TextStyle.RESET)
+    click.echo("11. Pay Fines")
+    click.echo(f"{TextStyle.RED}12. Quit" + TextStyle.RESET)
 
     print_separator()
 
     option = click.prompt("Enter an option number")
     while True:
         execute_option(option)
-        if option == "11":
+        if option == "12":
             break
 
 
@@ -170,7 +171,7 @@ def borrow_book(user_name):
         return
 
     # Calculate the return date as two days from the current date
-    return_date = datetime.datetime.now() + datetime.timedelta(days=2)
+    return_date = datetime.now() + timedelta(days=2)
 
     # Create a new BorrowedBook entry with the user's ID, book's ID, and return date
     borrow_book = BorrowedBook(
@@ -221,7 +222,7 @@ def return_book(book_title):
 
         # Get the return date of the borrowed book and the current date
         return_date = borrowed_book.return_date
-        current_date = datetime.datetime.now()
+        current_date = datetime.now()
 
         # Check if the book is returned late (current date is greater than return date)
         if current_date > return_date:
@@ -257,6 +258,14 @@ def return_book(book_title):
 
         # Delete the borrowed book entry from the database
         db.delete(borrowed_book)
+        
+        # Update the arrears status for the user
+        user_id = borrowed_book.user_id
+        user = db.query(User).filter(User.id == user_id).first()
+        fines = db.query(Fines).filter(Fines.user_id == user_id, Fines.arrears == False).all()
+        user_arrears = any(fine.arrears for fine in fines)
+        user.arrears = user_arrears
+        
         db.commit()
         db.close()
 
@@ -265,6 +274,7 @@ def return_book(book_title):
             f"{TextStyle.GREEN}Book '{book_title}' returned successfully."
             + TextStyle.RESET
         )
+
 
 
 # Define the 'buy-book' command
@@ -346,10 +356,56 @@ def buy_book(book_title, quantity):
         f"{TextStyle.GREEN} {quantity} '{book_title}' books purchased successfully for a total of Ksh.{total_amount}."
         + TextStyle.RESET
     )
+# Define the 'pay-fine' command
+@cli.command()
+@click.option("--username", prompt="Enter the username", help="Enter the username")
+def pay_fine(username):
+    """Pay fines for a user"""
 
-    # Define the 'list-books' command
+    db = Session()
+
+    # Find the user based on the provided username
+    user = db.query(User).filter(User.username == username).first()
+
+    if user is None:
+        db.close()
+        click.echo(f"{TextStyle.RED}User '{username}' not found." + TextStyle.RESET)
+        return
+
+    # Check if the user has any unpaid fines
+    unpaid_fines = db.query(Fines).filter(Fines.user_id == user.id, Fines.arrears == False).all()
+
+    if not unpaid_fines:
+        db.close()
+        click.echo(f"{TextStyle.YELLOW} {username} has no unpaid fines." + TextStyle.RESET)
+        return
+
+    # Calculate the total amount of unpaid fines for the user
+    total_unpaid_fine_amount = sum(fine.amount for fine in unpaid_fines)
+
+    # Display the total unpaid fine amount and ask for confirmation to pay
+    click.echo(
+        f"{TextStyle.CYAN}Total unpaid fine amount for '{username}': Ksh.{total_unpaid_fine_amount}"
+        + TextStyle.RESET
+    )
+    confirmation = click.prompt("Do you want to pay the fines? (yes/no)")
+
+    if confirmation.lower() != "yes":
+        db.close()
+        click.echo(f"{TextStyle.YELLOW}Payment cancelled." + TextStyle.RESET)
+        return
+
+    # Mark all unpaid fines for the user as paid
+    for fine in unpaid_fines:
+        fine.arrears = True
+
+    db.commit()
+    db.close()
+
+    click.echo(f"{TextStyle.GREEN}Unpaid fines for '{username}' have been paid." + TextStyle.RESET)
 
 
+# Define the 'list-books' command
 @cli.command()
 def list_books():
     """List all the books in the system"""
@@ -416,7 +472,7 @@ def list_users():
             fine_amount = fine.amount
 
         click.echo(
-            f"{TextStyle.BOLD} {TextStyle.CYAN}- Username: {user.username} | Fine Amount: Ksh.{fine_amount}"
+            f"{TextStyle.BOLD} {TextStyle.CYAN}- Username: {user.username} | Fine Amount: Ksh.{fine_amount} | Arrears: {fine.arrears}"
             + TextStyle.RESET
         )
 
@@ -549,7 +605,7 @@ def update_books():
 
 # Helper function to execute chosen options
 def execute_option(option):
-    while option not in ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"]:
+    while option not in ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"]:
         click.echo(
             f"{TextStyle.RED}Invalid option. Please choose a valid option."
             + TextStyle.RESET
@@ -577,6 +633,8 @@ def execute_option(option):
     elif option == "10":
         update()
     elif option == "11":
+        pay_fine()
+    elif option == "12":
         click.echo(
             f"{TextStyle.YELLOW} Thank you for choosing this bookstore!"
             + TextStyle.RESET
