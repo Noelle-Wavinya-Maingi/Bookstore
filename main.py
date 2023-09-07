@@ -121,6 +121,7 @@ def add_book(title, author, quantity, price):
 
     click.echo(f"{TextStyle.GREEN} {title} by {author} has been added successfully.")
 
+
 # Define the 'borrow-book' command
 @cli.command()
 @click.option("--user_name", prompt="Enter the username", help="Enter the username")
@@ -184,6 +185,7 @@ def borrow_book(user_name):
         + TextStyle.RESET
     )
 
+
 # Define the 'return-book' command
 @cli.command()
 @click.option(
@@ -228,8 +230,7 @@ def return_book(book_title):
             # Display a message indicating that the book is returned late and the late fee
             click.echo(
                 f"{TextStyle.RED}{book_title} returned late by {days_late} days."
-                f" You are charged Ksh.{late_fee} as a late fee."
-                + TextStyle.RESET
+                f" You are charged Ksh.{late_fee} as a late fee." + TextStyle.RESET
             )
 
             # Get the user ID associated with the borrowed book
@@ -242,7 +243,10 @@ def return_book(book_title):
             db.add(fine_entry)
         else:
             # If the book is returned on time, display a success message
-            click.echo(f"{TextStyle.GREEN}{book_title} returned successfully." + TextStyle.RESET)
+            click.echo(
+                f"{TextStyle.GREEN}{book_title} returned successfully."
+                + TextStyle.RESET
+            )
 
         # Set the status of the book back to "Available"
         borrowed_book.book.status = True
@@ -257,6 +261,35 @@ def return_book(book_title):
             f"{TextStyle.GREEN}Book '{book_title}' returned successfully."
             + TextStyle.RESET
         )
+
+
+# Define the 'list-books' command
+@cli.command()
+def list_books():
+    """List all the books in the system"""
+
+    db = Session()
+    books = db.query(Book).all()
+
+    # Check if there are no books in the system
+    if not books:
+        # If there are no books, display a message indicating that no books were found
+        click.echo(f"{TextStyle.YELLOW}No books found." + TextStyle.RESET)
+    else:
+        # If there are books in the system, display a header indicating "Books:"
+        click.echo(f"{TextStyle.CYAN}Books:")
+
+        # Iterate over each book in the list of books
+        for book in books:
+            # Determine the status of the book (Borrowed or Available)
+            status = "Borrowed" if not book.status else "Available"
+
+            # Display information about the book, including its title, author, status, and inventory
+            click.echo(
+                f"{TextStyle.BOLD} {TextStyle.CYAN}- {book.title} by {book.author} ({status}) || {book.inventory} books remaining."
+                + TextStyle.RESET
+            )
+
 
 # Helper function to execute chosen options
 def execute_option(option):
@@ -275,6 +308,8 @@ def execute_option(option):
         borrow_book()
     elif option == "4":
         return_book()
+    elif option == "5":
+        list_books()
     elif option == "7":
         click.echo(
             f"{TextStyle.YELLOW} Thank you for choosing this bookstore!"
