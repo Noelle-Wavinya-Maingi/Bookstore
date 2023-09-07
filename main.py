@@ -37,16 +37,17 @@ def menu():
     click.echo("2. Add a book")
     click.echo("3. Borrow a book")
     click.echo("4. Return a book")
-    click.echo("5. List of books")
-    click.echo("6. Buy a book")
-    click.echo(f"{TextStyle.RED}7. Quit" + TextStyle.RESET)
+    click.echo("5. Buy a book")
+    click.echo("6. List all books")
+    click.echo("7. List all users")
+    click.echo(f"{TextStyle.RED}8. Quit" + TextStyle.RESET)
 
     print_separator()
 
     option = click.prompt("Enter an option number")
     while True:
         execute_option(option)
-        if option == "7":
+        if option == "8":
             break
 
 
@@ -263,42 +264,6 @@ def return_book(book_title):
         )
 
 
-# Define the 'list-books' command
-@cli.command()
-def list_books():
-    """List all the books in the system"""
-
-    db = Session()
-
-    # Query the Sales table and join it with the Book table to get sales data with book titles
-    sales = (
-        db.query(Sales, Book)
-        .join(Book, Sales.book_id == Book.id)
-        .order_by(Sales.purchase_time.desc())
-        .all()
-    )
-
-    # Check if there are no sales records
-    if not sales:
-        # If there are no sales, display a message indicating that no sales were found
-        db.close()
-        click.echo(f"{TextStyle.YELLOW}No sales found." + TextStyle.RESET)
-        return
-
-    # If there are sales records, display a header indicating "Sales:"
-    click.echo(f"{TextStyle.CYAN}Books:")
-
-    # Iterate over each sale and display the sale information, including the book title
-    for sale, book in sales:
-        purchase_time = sale.purchase_time.strftime("%Y-%m-%d %H:%M:%S")
-        click.echo(
-            f"{TextStyle.BOLD} {TextStyle.CYAN}- Book: {book.title} |Author: {book.author} |Status: {book.status} |Inventory: {book.inventory} | Quantity: {sale.quantity} | Total Amount: Ksh.{sale.total_amount} | Purchase Time: {purchase_time}"
-            + TextStyle.RESET
-        )
-
-    db.close()
-
-
 # Define the 'buy-book' command
 @cli.command()
 @click.option(
@@ -379,10 +344,85 @@ def buy_book(book_title, quantity):
         + TextStyle.RESET
     )
 
+    # Define the 'list-books' command
+
+
+@cli.command()
+def list_books():
+    """List all the books in the system"""
+
+    db = Session()
+
+    # Query the Sales table and join it with the Book table to get sales data with book titles
+    sales = (
+        db.query(Sales, Book)
+        .join(Book, Sales.book_id == Book.id)
+        .order_by(Sales.purchase_time.desc())
+        .all()
+    )
+
+    # Check if there are no sales records
+    if not sales:
+        # If there are no sales, display a message indicating that no sales were found
+        db.close()
+        click.echo(f"{TextStyle.YELLOW}No sales found." + TextStyle.RESET)
+        return
+
+    # If there are sales records, display a header indicating "Sales:"
+    click.echo(f"{TextStyle.CYAN}Books:")
+
+    # Iterate over each sale and display the sale information, including the book title
+    for sale, book in sales:
+        purchase_time = sale.purchase_time.strftime("%Y-%m-%d %H:%M:%S")
+        click.echo(
+            f"{TextStyle.BOLD} {TextStyle.CYAN}- Book: {book.title} |Author: {book.author} |Status: {book.status} |Inventory: {book.inventory} | Quantity: {sale.quantity} | Total Amount: Ksh.{sale.total_amount} | Purchase Time: {purchase_time}"
+            + TextStyle.RESET
+        )
+
+    db.close()
+
+
+# Add a new command to list all users and their fine information
+@cli.command()
+def list_users():
+    """List all users and their fine information"""
+
+    db = Session()
+
+    # Query the User and Fines tables to get user details and fines
+    users_with_fines = (
+        db.query(User, Fines).outerjoin(Fines, User.id == Fines.user_id).all()
+    )
+
+    # Check if there are no users in the system
+    if not users_with_fines:
+        # If there are no users, display a message indicating that no users were found
+        db.close()
+        click.echo(f"{TextStyle.YELLOW}No users found." + TextStyle.RESET)
+        return
+
+    # If there are users, display a header indicating "Users:"
+    click.echo(f"{TextStyle.CYAN}Users:")
+
+    # Iterate over each user and display their details, including fines
+    for user, fine in users_with_fines:
+        # Determine if the user has fines and get the fine amount
+        if fine is None:
+            fine_amount = 0
+        else:
+            fine_amount = fine.amount
+
+        click.echo(
+            f"{TextStyle.BOLD} {TextStyle.CYAN}- Username: {user.username} | Fine Amount: Ksh.{fine_amount}"
+            + TextStyle.RESET
+        )
+
+    db.close()
+
 
 # Helper function to execute chosen options
 def execute_option(option):
-    while option not in ["1", "2", "3", "4", "5", "6", "7"]:
+    while option not in ["1", "2", "3", "4", "5", "6", "7", "8"]:
         click.echo(
             f"{TextStyle.RED}Invalid option. Please choose a valid option."
             + TextStyle.RESET
@@ -398,10 +438,12 @@ def execute_option(option):
     elif option == "4":
         return_book()
     elif option == "5":
-        list_books()
-    elif option == "6":
         buy_book()
+    elif option == "6":
+        list_books()
     elif option == "7":
+        list_users()
+    elif option == "8":
         click.echo(
             f"{TextStyle.YELLOW} Thank you for choosing this bookstore!"
             + TextStyle.RESET
