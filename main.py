@@ -1,6 +1,6 @@
 from database.db import Base, engine, Session
 import click
-from models import User
+from models import User, Book
 
 
 # Define ANSI codes for formatting
@@ -48,6 +48,7 @@ def menu():
         if option == "7":
             break
 
+
 # Set to store unique usernames
 unique_usernames = set()
 
@@ -74,17 +75,54 @@ def add_user(username):
     unique_usernames.add(username)
     click.echo(f"{TextStyle.GREEN} {username} added successfully.")
 
+#Dictionary to store book data
+books = {}
+
+#Define the 'add-book' command
+@cli.command()
+@click.option("--title", prompt = "Enter the title of the book", help = "Enter the title of the book")
+@click.option("--author", prompt = "Enter the author of the book", help = "Enter the author of the book")
+@click.option("--quantity", prompt = "Enter the number of books", help = "Enter the number of books")
+@click.option("--price", prompt = "Enter the price of one unit item", help = "Enter the price of one unit item")
+def add_book(title, author, quantity, price):
+    """Add a book to the system"""
+
+    db = Session()
+    book = Book(title = title, author = author, status = True, inventory = quantity, price = price) 
+
+    db.add(book)
+    db.commit()
+    db.close()
+
+    #Update the books dictionary with book information
+    books[title] = {
+        "author": author,
+        "status": True,
+        "quantity": int(quantity),
+        "price": float(price),
+    }
+
+    click.echo(f"{TextStyle.GREEN} {title} by {author} has been added successfully.")
+
 
 # Helper function to execute chosen options
 def execute_option(option):
     while option not in ["1", "2", "3", "4", "5", "6", "7"]:
-        click.echo(f"{TextStyle.RED}Invalid option. Please choose a valid option." + TextStyle.RESET)
+        click.echo(
+            f"{TextStyle.RED}Invalid option. Please choose a valid option."
+            + TextStyle.RESET
+        )
         option = click.prompt("Enter a valid option")
 
     if option == "1":
-        add_user()  
+        add_user()
+    elif option == "2":
+        add_book()
     elif option == "7":
-        click.echo(f"{TextStyle.YELLOW} Thank you for choosing this bookstore!" + TextStyle.RESET)
+        click.echo(
+            f"{TextStyle.YELLOW} Thank you for choosing this bookstore!"
+            + TextStyle.RESET
+        )
 
 
 cli.add_command(menu)
