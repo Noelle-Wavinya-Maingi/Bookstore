@@ -42,14 +42,15 @@ def menu():
     click.echo("7. List all users")
     click.echo("8. List of Borrowed Books")
     click.echo("9. Search")
-    click.echo(f"{TextStyle.RED}10. Quit" + TextStyle.RESET)
+    click.echo("10. Update records")
+    click.echo(f"{TextStyle.RED}11. Quit" + TextStyle.RESET)
 
     print_separator()
 
     option = click.prompt("Enter an option number")
     while True:
         execute_option(option)
-        if option == "10":
+        if option == "11":
             break
 
 
@@ -505,9 +506,50 @@ def search(query):
             )
 
 
+# Define the 'update' command with subcommands
+@cli.command()
+@click.option(
+    "--record_type",
+    type=click.Choice(["sales", "fines", "users", "books"]),
+    prompt="Enter the record type",
+    help="Enter the record type to update (sales, fines, users, books)",
+)
+def update(record_type):
+    """Update records in the database"""
+
+    if record_type == "sales":
+        update_sales()
+
+    elif record_type == "fines":
+        update_fine()
+
+    elif record_type == "users":
+        update_users()
+
+    elif record_type == "books":
+        update_books()
+
+
+# Define subcommands for sales records
+def update_sales():
+    pass
+
+
+def update_fine():
+    pass
+
+
+def update_users():
+    pass
+
+
+def update_books():
+    pass
+
+
 # Helper function to execute chosen options
 def execute_option(option):
-    while option not in ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]:
+    while option not in ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"]:
         click.echo(
             f"{TextStyle.RED}Invalid option. Please choose a valid option."
             + TextStyle.RESET
@@ -533,6 +575,8 @@ def execute_option(option):
     elif option == "9":
         search()
     elif option == "10":
+        update()
+    elif option == "11":
         click.echo(
             f"{TextStyle.YELLOW} Thank you for choosing this bookstore!"
             + TextStyle.RESET
