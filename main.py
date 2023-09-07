@@ -40,14 +40,15 @@ def menu():
     click.echo("5. Buy a book")
     click.echo("6. List all books")
     click.echo("7. List all users")
-    click.echo(f"{TextStyle.RED}8. Quit" + TextStyle.RESET)
+    click.echo("8. List of Borrowed Books")
+    click.echo(f"{TextStyle.RED}9. Quit" + TextStyle.RESET)
 
     print_separator()
 
     option = click.prompt("Enter an option number")
     while True:
         execute_option(option)
-        if option == "8":
+        if option == "9":
             break
 
 
@@ -218,7 +219,7 @@ def return_book(book_title):
 
         # Get the return date of the borrowed book and the current date
         return_date = borrowed_book.return_date
-        current_date = datetime.datetime.now()
+        current_date = datetime.now()
 
         # Check if the book is returned late (current date is greater than return date)
         if current_date > return_date:
@@ -420,9 +421,46 @@ def list_users():
     db.close()
 
 
+# List books borrowed by users and their return dates
+@cli.command()
+def list_borrowed_books():
+    """List books borrowed by users and their return dates"""
+
+    db = Session()
+
+    # Query BorrowedBook table and join it with User and Book table
+    borrowed_books = (
+        db.query(BorrowedBook, User, Book)
+        .join(User, BorrowedBook.user_id == User.id)
+        .join(Book, BorrowedBook.book_id == Book.id)
+        .all()
+    )
+
+    # Check if there are no borrowed books, if not display a message
+    if not borrowed_books:
+        db.close()
+        click.echo(
+            f"{TextStyle.YELLOW} No books are currently borrowed." + TextStyle.RESET
+        )
+        return
+
+    # If there are borrowed books, display a header indicating "Borrowed Books:"
+    click.echo(f"{TextStyle.CYAN}Borrowed Books: ")
+
+    # Iterate ober each borrowed book and display the book title, user and return date
+    for borrowed_book, user, book in borrowed_books:
+        return_date = borrowed_book.return_date.strftime("%Y-%m-%d %H:%M:%S")
+        click.echo(
+            f"{TextStyle.BOLD} {TextStyle.CYAN}- Book Title: {book.title} | Borrower: {user.username} | Return Date: {return_date}"
+            + TextStyle.RESET
+        )
+
+        db.close()
+
+
 # Helper function to execute chosen options
 def execute_option(option):
-    while option not in ["1", "2", "3", "4", "5", "6", "7", "8"]:
+    while option not in ["1", "2", "3", "4", "5", "6", "7", "8", "9"]:
         click.echo(
             f"{TextStyle.RED}Invalid option. Please choose a valid option."
             + TextStyle.RESET
@@ -444,6 +482,8 @@ def execute_option(option):
     elif option == "7":
         list_users()
     elif option == "8":
+        list_borrowed_books()
+    elif option == "9":
         click.echo(
             f"{TextStyle.YELLOW} Thank you for choosing this bookstore!"
             + TextStyle.RESET
