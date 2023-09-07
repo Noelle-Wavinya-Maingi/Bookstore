@@ -42,7 +42,7 @@ def menu():
     click.echo("7. List all users")
     click.echo("8. List of Borrowed Books")
     click.echo("9. Search")
-    click.echo("10. Update records")
+    click.echo("10. Update Book Records")
     click.echo("11. Pay Fines")
     click.echo(f"{TextStyle.RED}12. Quit" + TextStyle.RESET)
 
@@ -258,14 +258,18 @@ def return_book(book_title):
 
         # Delete the borrowed book entry from the database
         db.delete(borrowed_book)
-        
+
         # Update the arrears status for the user
         user_id = borrowed_book.user_id
         user = db.query(User).filter(User.id == user_id).first()
-        fines = db.query(Fines).filter(Fines.user_id == user_id, Fines.arrears == False).all()
+        fines = (
+            db.query(Fines)
+            .filter(Fines.user_id == user_id, Fines.arrears == False)
+            .all()
+        )
         user_arrears = any(fine.arrears for fine in fines)
         user.arrears = user_arrears
-        
+
         db.commit()
         db.close()
 
@@ -274,7 +278,6 @@ def return_book(book_title):
             f"{TextStyle.GREEN}Book '{book_title}' returned successfully."
             + TextStyle.RESET
         )
-
 
 
 # Define the 'buy-book' command
@@ -356,6 +359,8 @@ def buy_book(book_title, quantity):
         f"{TextStyle.GREEN} {quantity} '{book_title}' books purchased successfully for a total of Ksh.{total_amount}."
         + TextStyle.RESET
     )
+
+
 # Define the 'pay-fine' command
 @cli.command()
 @click.option("--username", prompt="Enter the username", help="Enter the username")
@@ -373,11 +378,15 @@ def pay_fine(username):
         return
 
     # Check if the user has any unpaid fines
-    unpaid_fines = db.query(Fines).filter(Fines.user_id == user.id, Fines.arrears == False).all()
+    unpaid_fines = (
+        db.query(Fines).filter(Fines.user_id == user.id, Fines.arrears == False).all()
+    )
 
     if not unpaid_fines:
         db.close()
-        click.echo(f"{TextStyle.YELLOW} {username} has no unpaid fines." + TextStyle.RESET)
+        click.echo(
+            f"{TextStyle.YELLOW} {username} has no unpaid fines." + TextStyle.RESET
+        )
         return
 
     # Calculate the total amount of unpaid fines for the user
@@ -402,7 +411,10 @@ def pay_fine(username):
     db.commit()
     db.close()
 
-    click.echo(f"{TextStyle.GREEN}Unpaid fines for '{username}' have been paid." + TextStyle.RESET)
+    click.echo(
+        f"{TextStyle.GREEN}Unpaid fines for '{username}' have been paid."
+        + TextStyle.RESET
+    )
 
 
 # Define the 'list-books' command
@@ -565,43 +577,55 @@ def search(query):
 # Define the 'update' command with subcommands
 @cli.command()
 @click.option(
-    "--record_type",
-    type=click.Choice(["sales", "fines", "users", "books"]),
-    prompt="Enter the record type",
-    help="Enter the record type to update (sales, fines, users, books)",
+    "--title",
+    prompt="Enter the title of the existing book",
+    help="Enter the title of the existing book",
 )
-def update(record_type):
-    """Update records in the database"""
+@click.option(
+    "--quantity",
+    prompt="Enter the quantity to add",
+    help="Enter the quantity to add",
+)
+@click.option(
+    "--price",
+    prompt="Enter the new price of the book",
+    help="Enter the new price of the book",
+)
+def update_book(title, quantity, price):
+    """Add more existing books to the system and update the price"""
 
-    if record_type == "sales":
-        update_sales()
+    db = Session()
 
-    elif record_type == "fines":
-        update_fine()
+    book = db.query(Book).filter(Book.title == title).first()
 
-    elif record_type == "users":
-        update_users()
+    if book is None:
+        db.close()
+        click.echo(f"{TextStyle.RED} {title} not found." + TextStyle.RESET)
+        return
 
-    elif record_type == "books":
-        update_books()
+    # Check if there are enough books in the inventory to add
+    try:
+        quantity = int(quantity)
+    except ValueError:
+        db.close()
+        click.echo(
+            f"{TextStyle.RED} Invalid Quantity. Please enter a valid number"
+            + TextStyle.RESET
+        )
+        return
 
+    # Update the existing book's quantity and price
+    book.inventory += quantity
+    book.price = float(price)
 
-# Define subcommands for sales records
-def update_sales():
-    pass
+    db.commit()
+    db.close()
 
-
-def update_fine():
-    pass
-
-
-def update_users():
-    pass
-
-
-def update_books():
-    pass
-
+    click.echo(
+        f"{TextStyle.GREEN} {quantity} more '{title}' books added successfully. "
+        f"New price: Ksh.{price}."
+        + TextStyle.RESET
+    )
 
 # Helper function to execute chosen options
 def execute_option(option):
@@ -631,7 +655,7 @@ def execute_option(option):
     elif option == "9":
         search()
     elif option == "10":
-        update()
+        update_book()
     elif option == "11":
         pay_fine()
     elif option == "12":
@@ -639,6 +663,8 @@ def execute_option(option):
             f"{TextStyle.YELLOW} Thank you for choosing this bookstore!"
             + TextStyle.RESET
         )
+    else:
+        execute_option(option)
 
 
 cli.add_command(menu)
