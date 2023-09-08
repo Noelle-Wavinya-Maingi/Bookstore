@@ -35,8 +35,7 @@ def add_user(username):
     unique_usernames.add(username)
     click.echo(f"{TextStyle.GREEN} {username} added successfully.")
 
-
-# Add a new command to list all users and their fine information
+# Define the 'list-users' command
 @user_commands.command()
 def list_users():
     """List all users and their fine information"""
@@ -45,7 +44,9 @@ def list_users():
 
     # Query the User and Fines tables to get user details and fines
     users_with_fines = (
-        db.query(User, Fines).outerjoin(Fines, User.id == Fines.user_id).all()
+        db.query(User, Fines)
+        .outerjoin(Fines, User.id == Fines.user_id)
+        .all()
     )
 
     # Check if there are no users in the system
@@ -63,15 +64,18 @@ def list_users():
         # Determine if the user has fines and get the fine amount
         if fine is None:
             fine_amount = 0
+            arrears = False
         else:
             fine_amount = fine.amount
+            arrears = fine.arrears
 
         click.echo(
-            f"{TextStyle.BOLD} {TextStyle.CYAN}- Username: {user.username} | Fine Amount: Ksh.{fine_amount} | Arrears: {fine.arrears}"
+            f"{TextStyle.BOLD} {TextStyle.CYAN}- Username: {user.username} | Fine Amount: Ksh.{fine_amount} | Arrears: {arrears}"
             + TextStyle.RESET
         )
 
     db.close()
+
 
 
 # Define the 'delete-user' command
