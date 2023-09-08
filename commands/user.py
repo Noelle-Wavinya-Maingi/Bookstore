@@ -119,3 +119,46 @@ def delete_user(username):
         f"{TextStyle.GREEN}User '{username}' has been deleted from the system."
         + TextStyle.RESET
     )
+
+
+# Define the 'update-username' command
+@user_commands.command()
+@click.option(
+    "--old-username",
+    prompt="Enter the current username",
+    help="Enter the current username",
+)
+@click.option(
+    "--new-username", prompt="Enter the new username", help="Enter the new username"
+)
+def update_username(old_username, new_username):
+    """Update a user's username in the system"""
+
+    db = Session()
+
+    # Find the user based on the provided old username
+    user = db.query(User).filter(User.username == old_username).first()
+
+    if user is None:
+        db.close()
+        click.echo(f"{TextStyle.RED} {old_username} not found." + TextStyle.RESET)
+        return
+
+    # Check if the new username already exists in the system
+    existing_user = db.query(User).filter(User.username == new_username).first()
+
+    if existing_user:
+        db.close()
+        click.echo(f"{TextStyle.RED} {new_username} already exsists." + TextStyle.RESET)
+
+    # Update the user's username
+    user.username = new_username
+
+    # Commit the changes and close the db
+    db.commit()
+    db.close()
+
+    click.echo(
+        f"{TextStyle.GREEN}Username for '{old_username}' has been updated to '{new_username}'."
+        + TextStyle.RESET
+    )

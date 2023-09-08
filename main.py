@@ -9,7 +9,7 @@ from commands.book import (
     buy_book,
     update_book,
 )
-from commands.user import add_user, delete_user, list_users
+from commands.user import add_user, delete_user, list_users, update_username
 from commands.fines import pay_fine
 from commands.lists import list_books, list_borrowed_books, search
 
@@ -43,17 +43,18 @@ def menu():
     click.echo("8. List of Borrowed Books")
     click.echo("9. Search")
     click.echo("10. Update Book Records")
-    click.echo("11. Delete User Records")
-    click.echo("12. Delete Book Records")
-    click.echo("13. Pay Fines")
-    click.echo(f"{TextStyle.RED}14. Quit" + TextStyle.RESET)
+    click.echo("11. Update User Records")
+    click.echo("12. Delete User Records")
+    click.echo("13. Delete Book Records")
+    click.echo("14. Pay Fines")
+    click.echo(f"{TextStyle.RED}15. Quit" + TextStyle.RESET)
 
     print_separator()
 
     option = click.prompt("Enter an option number")
     while True:
         execute_option(option)
-        if option == "14":
+        if option == "15":
             break
 
 
@@ -74,6 +75,7 @@ def execute_option(option):
         "12",
         "13",
         "14",
+        "15",
     ]:
         click.echo(
             f"{TextStyle.RED}Invalid option. Please choose a valid option."
@@ -102,12 +104,14 @@ def execute_option(option):
     elif option == "10":
         update_book()
     elif option == "11":
-        delete_user()
+        update_username()
     elif option == "12":
-        delete_book()
+        delete_user()
     elif option == "13":
-        pay_fine()
+        delete_book()
     elif option == "14":
+        pay_fine()
+    elif option == "15":
         click.echo(
             f"{TextStyle.YELLOW} Thank you for choosing this bookstore!"
             + TextStyle.RESET
