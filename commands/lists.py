@@ -16,33 +16,30 @@ def list_books():
 
     db = Session()
 
-    # Query the Sales table and join it with the Book table to get sales data with book titles
-    sales = (
-        db.query(Sales, Book)
-        .join(Book, Sales.book_id == Book.id)
-        .order_by(Sales.purchase_time.desc())
-        .all()
-    )
+    try:
+        # Query the Book table to get all books
+        books = db.query(Book).all()
 
-    # Check if there are no sales records
-    if not sales:
-        # If there are no sales, display a message indicating that no sales were found
+        # Check if there are no books in the system
+        if not books:
+            click.echo(f"{TextStyle.YELLOW}No books found in the system." + TextStyle.RESET)
+            return
+
+        # If there are books, display a header indicating "Books:"
+        click.echo(f"{TextStyle.CYAN}Books:")
+
+        # Iterate over each book and display its details
+        for book in books:
+            click.echo(
+                f"{TextStyle.BOLD} {TextStyle.CYAN}- Title: {book.title} | Author: {book.author} | Status: {book.status} | Inventory: {book.inventory} | Total Sales Amount: {book.total_sales}"
+                + TextStyle.RESET
+            )
+
+    except Exception as e:
+        # Handle any exceptions related to database access
+        click.echo(f"{TextStyle.RED}Error accessing the database: {str(e)}" + TextStyle.RESET)
         db.close()
-        click.echo(f"{TextStyle.YELLOW}No sales found." + TextStyle.RESET)
-        return
 
-    # If there are sales records, display a header indicating "Sales:"
-    click.echo(f"{TextStyle.CYAN}Books:")
-
-    # Iterate over each sale and display the sale information, including the book title
-    for sale, book in sales:
-        purchase_time = sale.purchase_time.strftime("%Y-%m-%d %H:%M:%S")
-        click.echo(
-            f"{TextStyle.BOLD} {TextStyle.CYAN}- Book: {book.title} |Author: {book.author} |Status: {book.status} |Inventory: {book.inventory} | Quantity: {sale.quantity} | Total Amount: Ksh.{sale.total_amount} | Purchase Time: {purchase_time}"
-            + TextStyle.RESET
-        )
-
-    db.close()
 
 
 # List books borrowed by users and their return dates
