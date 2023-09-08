@@ -8,7 +8,6 @@
 
 A simple command-line bookstore management system built with Python, SQLAlchemy, Alembic, and Click.
 
-
 ## Table of Contents
 
 - [Introduction](#introduction)
@@ -46,19 +45,19 @@ The Bookstore project is a command-line application for managing a bookstore. It
 
 ```sh
    cd Phase-3-Project
-   ```
+```
 
 3. Install the required Python packages:
 
 ```sh
    pip install -r requirements.txt
-   ```
+```
 
 4. Set up the database using Alembic:
 
 ```sh
    alembic upgrade head
-   ```
+```
 
 ## Usage
 
@@ -74,7 +73,7 @@ To use the Bookstore management system, follow these steps:
 
 ```sh
    python3 main.py
-   ```
+```
 
 5. You will be presented with an interactive menu. Choose an option by entering the corresponding number.
 
@@ -84,17 +83,41 @@ To use the Bookstore management system, follow these steps:
 
 The following commands are available within the interactive menu:
 
-1: Add a user to the system.
-2: Add a book to the system.
-3: Borrow a book.
-4: Return a book.
-5: Buy a book.
-6: List all books.
-7: List all users.
-8: List borrowed books.
-9: Search for users or books.
-10: Update book records.
-11: Delete user records.
-12: Delete book records.
-13: Pay fines for a user.
-14: Quit the application.
+1. Add a user to the system.
+2. Add a book to the system.
+3. Borrow a book.
+4. Return a book.
+5. Buy a book.
+6. List all books.
+7. List all users.
+8. List borrowed books.
+9. Search for users or books.
+10. Update book records.
+11. Delete user records.
+12. Delete book records.
+13. Pay fines for a user.
+14. Quit the application.
+
+## Database Setup
+
+This project uses SQLAlchemy and Alembic for database management. You can find the database configurations in the **`db.py`** file and migrations are managed using Alembic. To create a new migration, run:
+
+```sh
+   alembic revision -m "Description of the migration"
+```
+
+Then, apply the migration:
+
+```sh
+   alembic upgrade head
+```
+
+## Licence
+
+This project is licensed under the MIT License - see the [LICENSE](LICENCE) file for details.
+
+
+## Author
+
+The author of the code challenge solution is [Noelle Maingi.](https://github.com/Noelle-Wavinya-Maingi)
+
