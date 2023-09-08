@@ -43,15 +43,17 @@ def menu():
     click.echo("8. List of Borrowed Books")
     click.echo("9. Search")
     click.echo("10. Update Book Records")
-    click.echo("11. Pay Fines")
-    click.echo(f"{TextStyle.RED}12. Quit" + TextStyle.RESET)
+    click.echo("11. Delete User Records")
+    click.echo("12. Delete Book Records")
+    click.echo("13. Pay Fines")
+    click.echo(f"{TextStyle.RED}14. Quit" + TextStyle.RESET)
 
     print_separator()
 
     option = click.prompt("Enter an option number")
     while True:
         execute_option(option)
-        if option == "12":
+        if option == "14":
             break
 
 
@@ -623,13 +625,121 @@ def update_book(title, quantity, price):
 
     click.echo(
         f"{TextStyle.GREEN} {quantity} more '{title}' books added successfully. "
-        f"New price: Ksh.{price}."
+        f"New price: Ksh.{price}." + TextStyle.RESET
+    )
+
+
+# Define the 'delete-user' command
+@cli.command()
+@click.option(
+    "--username",
+    prompt="Enter the username to delete",
+    help="Enter the username to delete",
+)
+def delete_user(username):
+    """Delete a user from the system"""
+
+    db = Session()
+
+    user = db.query(User).filter(User.username == username).first()
+
+    if user is None:
+        db.close()
+        click.echo(f"{TextStyle.RED}User '{username}' not found." + TextStyle.RESET)
+        return
+
+    # Check if the user has any borrowed books
+    borrowed_book = (
+        db.query(BorrowedBook).filter(BorrowedBook.user_id == user.id).first()
+    )
+
+    if borrowed_book:
+        db.close()
+        click.echo(
+            f"{TextStyle.RED}Cannot delete user '{username}' as they have borrowed books."
+            + TextStyle.RESET
+        )
+        return
+
+    # Remove the username from the set if it exists
+    if username in unique_usernames:
+        unique_usernames.remove(username)
+
+    # Delete the user from the database
+    db.delete(user)
+    db.commit()
+    db.close()
+
+    click.echo(
+        f"{TextStyle.GREEN}User '{username}' has been deleted from the system."
         + TextStyle.RESET
     )
 
+
+# Define the 'delete-book' command
+@cli.command()
+@click.option(
+    "--title",
+    prompt="Enter the title of the book to delete",
+    help="Enter the title of the book to delete",
+)
+def delete_book(title):
+    """Delete a book from the system"""
+
+    db = Session()
+
+    book = db.query(Book).filter(Book.title == title).first()
+
+    if book is None:
+        db.close()
+        click.echo(f"{TextStyle.RED}Book '{title}' not found." + TextStyle.RESET)
+        return
+
+    # Check if the book is currently borrowed
+    borrowed_book = (
+        db.query(BorrowedBook).filter(BorrowedBook.book_id == book.id).first()
+    )
+
+    if borrowed_book:
+        db.close()
+        click.echo(
+            f"{TextStyle.RED}Cannot delete book '{title}' as it is currently borrowed."
+            + TextStyle.RESET
+        )
+        return
+
+    # Delete the book from the database
+    db.delete(book)
+    db.commit()
+    db.close()
+
+    # Remove the book from the 'books' dictionary
+    del books[title]
+
+    click.echo(
+        f"{TextStyle.GREEN}Book '{title}' has been deleted from the system."
+        + TextStyle.RESET
+    )
+
+
 # Helper function to execute chosen options
 def execute_option(option):
-    while option not in ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"]:
+    while option not in [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10",
+        "11",
+        "12",
+        "13",
+        "14",
+    ]:
         click.echo(
             f"{TextStyle.RED}Invalid option. Please choose a valid option."
             + TextStyle.RESET
@@ -657,8 +767,12 @@ def execute_option(option):
     elif option == "10":
         update_book()
     elif option == "11":
-        pay_fine()
+        delete_user()
     elif option == "12":
+        delete_book()
+    elif option == "13":
+        pay_fine()
+    elif option == "14":
         click.echo(
             f"{TextStyle.YELLOW} Thank you for choosing this bookstore!"
             + TextStyle.RESET
