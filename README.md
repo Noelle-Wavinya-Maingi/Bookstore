@@ -119,5 +119,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENCE) file
 
 ## Author
 
-The author of the code challenge solution is [Noelle Maingi.](https://github.com/Noelle-Wavinya-Maingi)
+The author of this project is [Noelle Maingi.](https://github.com/Noelle-Wavinya-Maingi)
 
